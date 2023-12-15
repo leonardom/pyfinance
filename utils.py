@@ -1,5 +1,6 @@
 import csv
 import re
+import pandas as pd
 
 
 def normalize(value):
@@ -22,3 +23,8 @@ def export_to_csv(data, filename):
     writer = csv.DictWriter(file, fieldnames = fields)
     writer.writeheader()
     writer.writerows(data)
+
+
+def export_to_excel(data, filename):
+  df = pd.DataFrame(data)
+  df.to_excel(filename)

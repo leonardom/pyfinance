@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from utils import normalize, export_to_csv
+from utils import normalize, export_to_csv, export_to_excel
 import requests
 import time
 
@@ -29,20 +29,29 @@ def get_fii_data(ticker):
       info = pp[2].text.replace('\n','').strip()
       key = f"{key} {info}"
     data.update({ key: value })
+  data = apply_multipler(data, 'Dividend Yield últ. 12 meses', 100)
   return data
 
 
+def apply_multipler(data, indicator, multipler):
+  for key, value in data.items():
+    if key == indicator:
+      data[key] = value * multipler
+  return data
     
 
 def main():
-  #tickers = ['VGHF11', 'BTCI11', 'GALG11','MCHF11','XPCA11','VINO11']
+
+  # tickers = ['LGCP11','VGHF11', 'BTCI11', 'GALG11','MCHF11','XPCA11','VGIR11','VINO11']
   tickers = [
-    'RZTR11', 'BRCO11', 'XPLG11', 'GTWR11', 'BTAL11', 'KNRI11', 'VGHF11', 
-    'HGLG11', 'CPTS11', 'BCFF11', 'DEVA11', 'SNAG11', 'BTCI11', 
-    'RZAG11', 'FVPQ11', 'TGAR11', 'VISC11', 'JSRE11', 'KNCR11', 'BRCR11', 
-    'RVBI11', 'HGBS11', 'VILG11', 'PVBI11', 'FIGS11', 'MXRF11', 'LVBI11', 
-    'JSAF11', 'SNFF11', 'HTMX11', 'MCHF11', 'RBRR11', 'BBPO11', 'VINO11'
+    'RZTR11','BRCO11','XPLG11','GTWR11','BTAL11','KNRI11','VGHF11',
+    'HGLG11','CPTS11','BCFF11','DEVA11','HCTR11','SNAG11','BTCI11',
+    'RZAG11','FVPQ11','TGAR11','VISC11','JSRE11','KNCR11','BRCR11',
+    'RVBI11','HGBS11','VILG11','PVBI11','FIGS11','MXRF11','LVBI11',
+    'JSAF11','SNFF11','HTMX11','MCHF11','RBRR11','TVRI11','VINO11',
+    'IRDM11'
   ]
+  # tickers = ['RZTR11']
 
   data = []
   for ticker in tickers:
@@ -50,7 +59,7 @@ def main():
     data.append(get_fii_data(ticker))
     time.sleep(5)
 
-  export_to_csv(data, 'fiis.csv')
+  export_to_excel(data, 'fiis.xlsx')
   print(f"All done! :)")
 
 if __name__ == "__main__":
