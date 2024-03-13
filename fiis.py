@@ -1,7 +1,11 @@
 from bs4 import BeautifulSoup
 from utils import normalize, export_to_csv, export_to_excel
+from gspread_utils import GoogleSpreadSheetUtil
 import requests
 import time
+import sys
+
+gsu = GoogleSpreadSheetUtil('Carteira de FIIs')
 
 def get_basic_information(soup, name):
   for information in soup.find_all('div', class_='basicInformation__grid__box'):  
@@ -38,20 +42,33 @@ def apply_multipler(data, indicator, multipler):
     if key == indicator:
       data[key] = value * multipler
   return data
+
+
+def get_tickers_from_gs():
+  data = gsu.get_sheet_data()
+  tickers = []
+  for row in data[2:38]:
+    tickers.append(row[0])
+  return tickers
     
 
-def main():
+def update_gs_with_dy_pvp(data):
+  for row in data:
+    cell = gsu.find_cell(row['ticker'])
+    print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 5 with {row['Dividend Yield últ. 12 meses']}...")
+    gsu.update_cell(cell.row, 5, row['Dividend Yield últ. 12 meses']/100.0)
+    print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 6 with {row['P/VP']}...")
+    gsu.update_cell(cell.row, 6, row['P/VP'])
+    time.sleep(2)
 
-  # tickers = ['LGCP11','VGHF11', 'BTCI11', 'GALG11','MCHF11','XPCA11','VGIR11','VINO11']
-  tickers = [
-    'RZTR11','BRCO11','XPLG11','GTWR11','BTAL11','KNRI11','VGHF11',
-    'HGLG11','CPTS11','BCFF11','DEVA11','HCTR11','SNAG11','BTCI11',
-    'RZAG11','FVPQ11','TGAR11','VISC11','JSRE11','KNCR11','BRCR11',
-    'RVBI11','HGBS11','VILG11','PVBI11','FIGS11','MXRF11','LVBI11',
-    'JSAF11','SNFF11','HTMX11','MCHF11','RBRR11','TVRI11','VINO11',
-    'IRDM11'
-  ]
-  # tickers = ['RZTR11']
+
+def main():
+  tickers = sys.argv[1:]
+  if len(tickers) == 0:
+    print("No tickers provided!")
+    if input("Do you want to get tickers from your Google Sheets? (yes/no) ") in ["no", "n"]:
+      return
+    tickers = get_tickers_from_gs()
 
   data = []
   for ticker in tickers:
@@ -59,6 +76,7 @@ def main():
     data.append(get_fii_data(ticker))
     time.sleep(5)
 
+  update_gs_with_dy_pvp(data)
   export_to_excel(data, 'fiis.xlsx')
   print(f"All done! :)")
 

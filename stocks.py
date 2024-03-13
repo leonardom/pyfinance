@@ -1,9 +1,12 @@
 from bs4 import BeautifulSoup
 from utils import normalize, export_to_csv
+from gspread_utils import GoogleSpreadSheetUtil
 import datetime
 import sys
 import requests
 import time
+
+gsu = GoogleSpreadSheetUtil('Carteira de Ações')
 
 headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -55,18 +58,34 @@ def get_data(ticker):
   }
   return data
 
+def get_tickers_from_gs():
+  data = gsu.get_sheet_data()
+  tickers = []
+  for row in data[2:23]:
+    tickers.append(row[0])
+  return tickers
+
+def update_gs_with_dy_5y(data):
+  for row in data:
+    cell = gsu.find_cell(row['ticker'])
+    print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 5 with {row['dy_5y']}...")
+    gsu.update_cell(cell.row, 5, row['dy_5y'])
 
 def main():
-  if len(sys.argv) == 1:
-    print("Missing tickers arguments")
-    return
   tickers = sys.argv[1:]
+  if len(tickers) == 0:
+    print("No tickers provided!")
+    if input("Do you want to get tickers from your Google Sheets? (yes/no) ") in ["no", "n"]:
+      return
+    tickers = get_tickers_from_gs()
+  
   data = []
   for ticker in tickers:
     print(f"Getting data for {ticker}...")
     data.append(get_data(ticker))
     time.sleep(5)
 
+  update_gs_with_dy_5y(data)
   export_to_csv(data, 'stocks.csv')
   print(f"All done! :)")
 
