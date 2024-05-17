@@ -18,6 +18,9 @@ def normalize(value):
 
 
 def export_to_csv(data, filename):
+  if input("Do you want export CSV file? (yes/no) ") in ["no", "n"]:
+    return
+
   fields = data[0].keys()
   with open(filename, 'w') as file:
     writer = csv.DictWriter(file, fieldnames = fields)
@@ -26,5 +29,8 @@ def export_to_csv(data, filename):
 
 
 def export_to_excel(data, filename):
+  if input("Do you want export Excel file? (yes/no) ") in ["no", "n"]:
+    return
+
   df = pd.DataFrame(data)
   df.to_excel(filename)

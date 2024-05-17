@@ -16,7 +16,6 @@ headers = {
     'Sec-Fetch-Mode': 'navigate',
     'Host': 'www.fundamentus.com.br',
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
-    'Referer': 'https://www.fundamentus.com.br/detalhes.php?papel=BRAP4',
     'Connection': 'keep-alive',
 }
 
@@ -26,7 +25,6 @@ def get_dividends(ticker):
     'tipo': '2',
   }
   response = requests.get('https://www.fundamentus.com.br/proventos.php', params=params, headers=headers)
-  #print(response.text)
   soup = BeautifulSoup(response.text, 'html.parser')
   table = soup.find(id='resultado-anual')
   data = {}
@@ -66,10 +64,24 @@ def get_tickers_from_gs():
   return tickers
 
 def update_gs_with_dy_5y(data):
+  if input("Do you want update Google Sheets? (yes/no) ") in ["no", "n"]:
+    return
+
   for row in data:
     cell = gsu.find_cell(row['ticker'])
     print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 5 with {row['dy_5y']}...")
     gsu.update_cell(cell.row, 5, row['dy_5y'])
+
+def print_divisor():
+  print(f"+{'-' * 8}+{'-' * 8}+")
+
+def print_data(data):
+  print_divisor()
+  print("| TICKER | D/Y 5y |")
+  print_divisor()
+  for row in data:
+    print(f"|{row['ticker']:^8}|{row['dy_5y']:^8,.2f}|" )
+  print_divisor()
 
 def main():
   tickers = sys.argv[1:]
@@ -87,6 +99,8 @@ def main():
 
   update_gs_with_dy_5y(data)
   export_to_csv(data, 'stocks.csv')
+  print_data(data)
+
   print(f"All done! :)")
 
 if __name__ == "__main__":

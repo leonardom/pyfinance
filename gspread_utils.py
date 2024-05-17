@@ -1,9 +1,12 @@
 import gspread
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class GoogleSpreadSheetUtil:
   def __init__(self, sheet_name) -> None:
-    sa = gspread.service_account(filename="service-account.json")
-    sh = sa.open_by_key('1VwaHA58DtweRV2W_es9GMhUTho36odj0b18W0ajdgVc')
+    sa = gspread.service_account(filename=os.environ["SERVICE_ACCOUNT_FILE"])
+    sh = sa.open_by_key(os.environ["SPREADSHEET_KEY"])
     self.wks = sh.worksheet(sheet_name)    
 
   def get_sheet_data(self):

@@ -53,6 +53,9 @@ def get_tickers_from_gs():
     
 
 def update_gs_with_dy_pvp(data):
+  if input("Do you want update Google Sheets? (yes/no) ") in ["no", "n"]:
+    return
+
   for row in data:
     cell = gsu.find_cell(row['ticker'])
     print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 5 with {row['Dividend Yield últ. 12 meses']}...")
@@ -60,6 +63,17 @@ def update_gs_with_dy_pvp(data):
     print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 6 with {row['P/VP']}...")
     gsu.update_cell(cell.row, 6, row['P/VP'])
     time.sleep(2)
+
+def print_divisor():
+  print(f"+{'-' * 8}+{'-' * 9}+{'-' * 6}+")
+
+def print_data(data):
+  print_divisor()
+  print("| TICKER | D/Y 12M | P/VP |")
+  print_divisor()
+  for row in data:
+    print(f"|{row['ticker']:^8}|{row['Dividend Yield últ. 12 meses']:^9,.2f}|{row['P/VP']:^6,.2f}|" )
+  print_divisor()
 
 
 def main():
@@ -78,6 +92,7 @@ def main():
 
   update_gs_with_dy_pvp(data)
   export_to_excel(data, 'fiis.xlsx')
+  print_data(data)
   print(f"All done! :)")
 
 if __name__ == "__main__":
