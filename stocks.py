@@ -60,7 +60,8 @@ def get_tickers_from_gs():
   data = gsu.get_sheet_data()
   tickers = []
   for row in data[2:23]:
-    tickers.append(row[0])
+    if row[0]:
+      tickers.append(row[0])
   return tickers
 
 def update_gs_with_dy_5y(data):
@@ -98,7 +99,7 @@ def main():
     time.sleep(5)
 
   update_gs_with_dy_5y(data)
-  export_to_csv(data, 'stocks.csv')
+  #export_to_csv(data, 'stocks.csv')
   print_data(data)
 
   print(f"All done! :)")

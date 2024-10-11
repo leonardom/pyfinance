@@ -7,6 +7,17 @@ import sys
 
 gsu = GoogleSpreadSheetUtil('Carteira de FIIs')
 
+headers = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Sec-Fetch-Site': 'same-origin',
+    'Sec-Fetch-Dest': 'document',
+    'Accept-Language': 'en-GB,en;q=0.9',
+    'Sec-Fetch-Mode': 'navigate',
+    'Host': 'www.fundsexplorer.com.br',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
+    'Connection': 'keep-alive',
+}
+
 def get_basic_information(soup, name):
   for information in soup.find_all('div', class_='basicInformation__grid__box'):  
     pp = information.find_all('p')
@@ -16,8 +27,9 @@ def get_basic_information(soup, name):
 
 
 def get_fii_data(ticker):
-  response = requests.get(f'https://www.fundsexplorer.com.br/funds/${ticker}')
+  response = requests.get(f'https://www.fundsexplorer.com.br/funds/${ticker}', headers=headers)
   soup = BeautifulSoup(response.text, 'html.parser')
+  print(soup)
   fii_name = soup.find('p', class_='headerTicker__content__name').text
   data = {
     'ticker': ticker.upper(),
