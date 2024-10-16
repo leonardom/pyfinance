@@ -1,58 +1,30 @@
-from bs4 import BeautifulSoup
 from utils import normalize, export_to_csv, export_to_excel
 from gspread_utils import GoogleSpreadSheetUtil
-import requests
+from selenium import webdriver
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+
 import time
 import sys
 
 gsu = GoogleSpreadSheetUtil('Carteira de FIIs')
-
-headers = {
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Sec-Fetch-Site': 'same-origin',
-    'Sec-Fetch-Dest': 'document',
-    'Accept-Language': 'en-GB,en;q=0.9',
-    'Sec-Fetch-Mode': 'navigate',
-    'Host': 'www.fundsexplorer.com.br',
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
-    'Connection': 'keep-alive',
-}
-
-def get_basic_information(soup, name):
-  for information in soup.find_all('div', class_='basicInformation__grid__box'):  
-    pp = information.find_all('p')
-    if pp[0].text.replace('\n','').strip() == name:
-      return pp[1].text.replace('\n','').strip()
-  return ""
+options = webdriver.ChromeOptions()
+options.add_argument("--headless=new")
+browser = webdriver.Chrome(options=options)
 
 
 def get_fii_data(ticker):
-  response = requests.get(f'https://www.fundsexplorer.com.br/funds/${ticker}', headers=headers)
-  soup = BeautifulSoup(response.text, 'html.parser')
-  print(soup)
-  fii_name = soup.find('p', class_='headerTicker__content__name').text
   data = {
     'ticker': ticker.upper(),
-    'nome': fii_name.upper(),
-    'tipo': get_basic_information(soup, 'Tipo ANBIMA').upper(),
-    'segmento': get_basic_information(soup, 'Segmento').upper(),
   }
-  for indicator in soup.find_all('div', class_='indicators__box'):
-    pp = indicator.find_all('p')
-    key = pp[0].text.replace('\n','').strip()
-    value = normalize(pp[1].text.replace('\n','').strip())
-    if len(pp) > 2:
-      info = pp[2].text.replace('\n','').strip()
-      key = f"{key} {info}"
-    data.update({ key: value })
-  data = apply_multipler(data, 'Dividend Yield últ. 12 meses', 100)
-  return data
-
-
-def apply_multipler(data, indicator, multipler):
-  for key, value in data.items():
-    if key == indicator:
-      data[key] = value * multipler
+  browser.get(f"https://www.fundsexplorer.com.br/funds/{ticker.upper()}")
+  data['valor_cota'] = normalize(browser.find_element(By.XPATH, '//*[@id="carbon_fields_fiis_header-2"]/div/div/div[1]/div[1]/p').text)
+  data['liquidez_media_diaria'] = normalize(browser.find_element(By.XPATH, '//*[@id="indicators"]/div[1]/p[2]/b').text)
+  data['ultimo_rendimento'] = normalize(browser.find_element(By.XPATH, '//*[@id="indicators"]/div[2]/p[2]/b').text)
+  data['dividend_yield_12m'] = normalize(browser.find_element(By.XPATH, '//*[@id="indicators"]/div[3]/p[2]/b').text) * 100
+  data['p_vp'] = normalize(browser.find_element(By.XPATH, '//*[@id="indicators"]/div[7]/p[2]/b').text)
   return data
 
 
@@ -70,10 +42,10 @@ def update_gs_with_dy_pvp(data):
 
   for row in data:
     cell = gsu.find_cell(row['ticker'])
-    print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 5 with {row['Dividend Yield últ. 12 meses']}...")
-    gsu.update_cell(cell.row, 5, row['Dividend Yield últ. 12 meses']/100.0)
-    print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 6 with {row['P/VP']}...")
-    gsu.update_cell(cell.row, 6, row['P/VP'])
+    print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 5 with {row['dividend_yield_12m']}...")
+    gsu.update_cell(cell.row, 5, row['dividend_yield_12m']/100.0)
+    print(f"Updating {row['ticker']} into the spreadsheet row {cell.row} col 6 with {row['p_vp']}...")
+    gsu.update_cell(cell.row, 6, row['p_vp'])
     time.sleep(2)
 
 def print_divisor():
@@ -84,7 +56,7 @@ def print_data(data):
   print("| TICKER | D/Y 12M | P/VP |")
   print_divisor()
   for row in data:
-    print(f"|{row['ticker']:^8}|{row['Dividend Yield últ. 12 meses']:^9,.2f}|{row['P/VP']:^6,.2f}|" )
+    print(f"|{row['ticker']:^8}|{row['dividend_yield_12m']:^9,.2f}|{row['p_vp']:^6,.2f}|" )
   print_divisor()
 
 
@@ -103,8 +75,9 @@ def main():
     time.sleep(5)
 
   update_gs_with_dy_pvp(data)
-  export_to_excel(data, 'fiis.xlsx')
+  # export_to_excel(data, 'fiis.xlsx')
   print_data(data)
+  browser.quit()
   print(f"All done! :)")
 
 if __name__ == "__main__":
