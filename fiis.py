@@ -71,8 +71,11 @@ def main():
   data = []
   for ticker in tickers:
     print(f"Getting data for {ticker}...")
-    data.append(get_fii_data(ticker))
-    time.sleep(5)
+    try:
+      data.append(get_fii_data(ticker))
+      time.sleep(5)
+    except Exception as e:
+      print(f"ERROR: could not get data for {ticker}:", e)
 
   update_gs_with_dy_pvp(data)
   # export_to_excel(data, 'fiis.xlsx')
