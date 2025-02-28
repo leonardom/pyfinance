@@ -176,3 +176,10 @@ def main():
 
 if __name__ == "__main__":
   main()
+  # symbol="BOVA11.SA"
+  # end_date = datetime.today()
+  # start_date = end_date - timedelta(days=30)  # 4 months before today
+
+  # print(f"Downloading data for {symbol} from {start_date} to {end_date}")
+  # stock_data = yf.download(symbol, start=start_date, end=end_date)
+  # print(stock_data)
